@@ -1,6 +1,6 @@
 import pygame
 import sys
-from code_parser import parse_code  # Убедитесь, что файл называется code_parser.py
+from code_parser import parse_code
 from game import Game
 from engine import Engine
 from ui import UI
@@ -17,23 +17,19 @@ def main():
     game = Game()
     engine = Engine(game, step_delay_ms=600)
 
-    # 🔽 Загружаем сохранённый код при запуске
     ui.code_lines = load_code()
     ui.cursor_line = len(ui.code_lines) - 1
-    ui.cursor_col = len(ui.code_lines[-1])
+    ui.cursor_col = len(ui.code_lines[-1]) if ui.code_lines else 0
 
     running = True
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+            if event.type == pygame.QUIT: running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: running = False
             
             action = ui.handle_event(event)
-            
             if action == "RUN":
-                save_code(ui.code_lines)  # 💾 Сохраняем перед запуском
+                save_code(ui.code_lines)
                 code = ui.get_code_text()
                 commands, err_line, err_msg = parse_code(code)
                 if commands is None:
@@ -42,34 +38,42 @@ def main():
                     engine.is_running = False
                 else:
                     ui.set_error("")
+                    ui.set_status("")
                     ui.set_exec_line(-1)
                     engine.start(commands)
                     
             elif action == "CLEAR":
-                # 🧹 Очистка редактора и остановка выполнения
+                # 🧹 Очищаем ТОЛЬКО редактор и сбрасываем состояние выполнения
                 ui.code_lines = [""]
                 ui.cursor_line = 0
                 ui.cursor_col = 0
                 ui.set_error("")
+                ui.set_status("")
                 ui.set_exec_line(-1)
                 engine.is_running = False
                 engine.is_done = False
-                game.reset()
-                save_code(ui.code_lines)  # 💾 Сохраняем пустой файл
+                engine.level_completed = False
+                # ⛔ game.reset() УБРАН: позиция игрока, цель и очки сохраняются
+                save_code(ui.code_lines)
 
         # Обновление движка
         if engine.is_running:
             engine.update()
             ui.set_exec_line(engine.get_executing_line_idx())
-            if engine.is_done:
+            
+            if engine.level_completed:
+                ui.set_status("🎉 +10 очков! Новый уровень!")
                 ui.set_exec_line(-1)
-                ui.set_error("✅ Программа выполнена!")
+                engine.level_completed = False
+            elif engine.is_done:
+                ui.set_exec_line(-1)
+                if not ui.error_msg and not ui.status_msg:
+                    ui.set_status("✅ Программа выполнена!")
 
         ui.draw(screen, game)
         pygame.display.flip()
         clock.tick(60)
 
-    # 💾 Финальное сохранение при выходе
     save_code(ui.code_lines)
     pygame.quit()
     sys.exit()

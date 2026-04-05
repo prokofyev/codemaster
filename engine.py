@@ -8,19 +8,18 @@ class Engine:
         self.current_idx = -1
         self.is_running = False
         self.is_done = False
+        self.level_completed = False
         self.last_step_time = 0
 
     def start(self, commands):
-        """Запускает выполнение списка команд."""
         self.commands = commands
         self.current_idx = -1
         self.is_running = True
         self.is_done = False
-        self.game.reset()
+        self.level_completed = False
         self.last_step_time = pygame.time.get_ticks()
 
     def update(self):
-        """Вызывается в каждом кадре. Выполняет следующую команду по таймеру."""
         if not self.is_running:
             return
 
@@ -36,8 +35,14 @@ class Engine:
             self.game.move(cmd)
             self.last_step_time = now
 
+            # Проверка достижения цели
+            if self.game.check_target():
+                self.game.add_score(10)
+                self.game.reset_level()
+                self.is_running = False
+                self.level_completed = True
+
     def get_executing_line_idx(self):
-        """Возвращает индекс строки в редакторе, которая выполняется сейчас."""
         if 0 <= self.current_idx < len(self.commands):
             return self.commands[self.current_idx][0]
         return -1
