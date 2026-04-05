@@ -1,14 +1,13 @@
 import pygame
 
 class Engine:
-    def __init__(self, game, step_delay_ms: int = 800):
+    def __init__(self, game, step_delay_ms: int = 600):
         self.game = game
         self.step_delay = step_delay_ms
         self.commands = []
         self.current_idx = -1
         self.is_running = False
         self.is_done = False
-        self.level_completed = False
         self.last_step_time = 0
 
     def start(self, commands):
@@ -16,7 +15,6 @@ class Engine:
         self.current_idx = -1
         self.is_running = True
         self.is_done = False
-        self.level_completed = False
         self.last_step_time = pygame.time.get_ticks()
 
     def update(self):
@@ -26,6 +24,7 @@ class Engine:
         now = pygame.time.get_ticks()
         if now - self.last_step_time >= self.step_delay:
             self.current_idx += 1
+            
             if self.current_idx >= len(self.commands):
                 self.is_running = False
                 self.is_done = True
@@ -35,14 +34,11 @@ class Engine:
             self.game.move(cmd)
             self.last_step_time = now
 
-            # Проверка достижения цели
             if self.game.check_target():
-                self.game.add_score(10)
+                self.game.add_score()
                 self.game.reset_level()
                 self.is_running = False
-                self.level_completed = True
+                self.is_done = False  # Уровень сброшен, сбрасываем флаг завершения
 
-    def get_executing_line_idx(self):
-        if 0 <= self.current_idx < len(self.commands):
-            return self.commands[self.current_idx][0]
-        return -1
+    def get_executing_line_idx(self) -> int:
+        return self.commands[self.current_idx][0] if 0 <= self.current_idx < len(self.commands) else -1

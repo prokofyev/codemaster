@@ -15,7 +15,7 @@ def main():
 
     ui = UI(info.current_w, info.current_h)
     game = Game()
-    engine = Engine(game, step_delay_ms=600)
+    engine = Engine(game, step_delay_ms=500)
 
     ui.code_lines = load_code()
     ui.cursor_line = len(ui.code_lines) - 1
@@ -30,8 +30,7 @@ def main():
             action = ui.handle_event(event)
             if action == "RUN":
                 save_code(ui.code_lines)
-                code = ui.get_code_text()
-                commands, err_line, err_msg = parse_code(code)
+                commands, err_line, err_msg = parse_code(ui.get_code_text())
                 if commands is None:
                     ui.set_error(err_msg)
                     ui.set_exec_line(err_line)
@@ -43,32 +42,25 @@ def main():
                     engine.start(commands)
                     
             elif action == "CLEAR":
-                # 🧹 Очищаем ТОЛЬКО редактор и сбрасываем состояние выполнения
                 ui.code_lines = [""]
-                ui.cursor_line = 0
-                ui.cursor_col = 0
-                ui.set_error("")
-                ui.set_status("")
-                ui.set_exec_line(-1)
-                engine.is_running = False
-                engine.is_done = False
-                engine.level_completed = False
-                # ⛔ game.reset() УБРАН: позиция игрока, цель и очки сохраняются
+                ui.cursor_line = 0; ui.cursor_col = 0
+                ui.set_error(""); ui.set_status(""); ui.set_exec_line(-1)
+                engine.is_running = False; engine.is_done = False
                 save_code(ui.code_lines)
 
-        # Обновление движка
+        # Логика выполнения
         if engine.is_running:
             engine.update()
             ui.set_exec_line(engine.get_executing_line_idx())
             
-            if engine.level_completed:
+            if game.check_target() and engine.is_running == False: # Цель достигнута в этом кадре
                 ui.set_status("🎉 +10 очков! Новый уровень!")
                 ui.set_exec_line(-1)
-                engine.level_completed = False
             elif engine.is_done:
                 ui.set_exec_line(-1)
                 if not ui.error_msg and not ui.status_msg:
                     ui.set_status("✅ Программа выполнена!")
+                engine.is_done = False  # Сброс флага после отображения
 
         ui.draw(screen, game)
         pygame.display.flip()
