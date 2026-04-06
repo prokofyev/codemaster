@@ -64,7 +64,17 @@ def main():
                 if engine.is_done:
                     ui.set_status("✅ Программа выполнена!")
                 else:
+                    # 🎉 Уровень пройден
                     ui.set_status("🎉 +10 очков! Новый уровень!")
+                    
+                    # Очищаем редактор и курсор
+                    ui.code_lines = [""]
+                    ui.cursor_line = 0
+                    ui.cursor_col = 0
+                    save_code(ui.code_lines)
+                    
+                    # Сбрасываем флаг, чтобы следующий RUN не триггерил reset_player()
+                    engine.is_done = False
 
         ui.draw(screen, game)
         pygame.display.flip()
