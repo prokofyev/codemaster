@@ -8,6 +8,7 @@ from storage import load_code, save_code
 
 def main():
     pygame.init()
+    pygame.key.set_repeat(500, 50)
     info = pygame.display.Info()
     screen = pygame.display.set_mode((info.current_w, info.current_h), pygame.FULLSCREEN)
     pygame.display.set_caption("Учимся программировать")
