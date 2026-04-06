@@ -5,12 +5,9 @@ class Engine:
         self.game = game
         self.step_delay = step_delay_ms
         self.commands = []
-        
-        # Состояние выполнения текущей команды
         self.current_cmd_idx = 0
         self.steps_left = 0
         self.current_dir = ""
-        
         self.is_running = False
         self.is_done = False
         self.last_step_time = 0
@@ -24,7 +21,6 @@ class Engine:
         self.last_step_time = pygame.time.get_ticks()
 
     def _load_command(self):
-        """Загружает следующую команду из списка."""
         if self.current_cmd_idx < len(self.commands):
             _, self.current_dir, self.steps_left = self.commands[self.current_cmd_idx]
         else:
@@ -38,19 +34,16 @@ class Engine:
         now = pygame.time.get_ticks()
         if now - self.last_step_time >= self.step_delay:
             if self.steps_left > 0:
-                # Выполняем ровно 1 клетку за такт
                 self.game.move(self.current_dir, 1)
                 self.steps_left -= 1
                 self.last_step_time = now
 
-                # Проверяем цель после каждого единичного шага
                 if self.game.check_target():
                     self.game.add_score()
-                    self.game.reset_level()
                     self.is_running = False
+                    # Убран мгновенный reset_level() — теперь он в main.py после задержки
                     return
             else:
-                # Команда полностью выполнена, переходим к следующей
                 self.current_cmd_idx += 1
                 self._load_command()
                 if self.is_running:
@@ -59,7 +52,6 @@ class Engine:
                     self.is_done = True
 
     def get_executing_line_idx(self) -> int:
-        """Возвращает индекс строки, которая сейчас выполняется."""
         if self.is_running and self.current_cmd_idx < len(self.commands):
             return self.commands[self.current_cmd_idx][0]
         return -1

@@ -21,6 +21,8 @@ def main():
     ui.cursor_line = len(ui.code_lines) - 1
     ui.cursor_col = len(ui.code_lines[-1]) if ui.code_lines else 0
 
+    level_complete_start_time = 0
+
     running = True
     while running:
         for event in pygame.event.get():
@@ -28,8 +30,8 @@ def main():
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: running = False
             
             action = ui.handle_event(event)
-            if action == "RUN":
-                # Если предыдущий запуск не привёл к цели, возвращаем игрока на старт
+            # Блокируем кнопки во время показа сообщения о новом уровне
+            if level_complete_start_time == 0 and action == "RUN":
                 if engine.is_done:
                     game.reset_player()
                     engine.is_done = False
@@ -47,14 +49,13 @@ def main():
                     ui.set_exec_line(-1)
                     engine.start(commands)
                     
-            elif action == "CLEAR":
+            elif level_complete_start_time == 0 and action == "CLEAR":
                 ui.code_lines = [""]
                 ui.cursor_line = 0; ui.cursor_col = 0
                 ui.set_error(""); ui.set_status(""); ui.set_exec_line(-1)
                 engine.is_running = False; engine.is_done = False
                 save_code(ui.code_lines)
 
-        # Логика выполнения
         if engine.is_running:
             engine.update()
             ui.set_exec_line(engine.get_executing_line_idx())
@@ -64,19 +65,22 @@ def main():
                 if engine.is_done:
                     ui.set_status("✅ Программа выполнена!")
                 else:
-                    # 🎉 Уровень пройден
-                    ui.set_status("🎉 +10 очков! Новый уровень!")
-                    
-                    # Очищаем редактор и курсор
-                    ui.code_lines = [""]
-                    ui.cursor_line = 0
-                    ui.cursor_col = 0
-                    save_code(ui.code_lines)
-                    
-                    # Сбрасываем флаг, чтобы следующий RUN не триггерил reset_player()
-                    engine.is_done = False
+                    # Запускаем таймер показа сообщения
+                    if level_complete_start_time == 0:
+                        level_complete_start_time = pygame.time.get_ticks()
 
-        ui.draw(screen, game)
+        # ⏱ Таймер: через 2 секунды скрываем сообщение и запускаем новый уровень
+        if level_complete_start_time > 0:
+            now = pygame.time.get_ticks()
+            if now - level_complete_start_time >= 2000:
+                game.reset_level()
+                ui.code_lines = [""]
+                ui.cursor_line = 0; ui.cursor_col = 0
+                save_code(ui.code_lines)
+                ui.set_status("")
+                level_complete_start_time = 0
+
+        ui.draw(screen, game, show_level_msg=(level_complete_start_time > 0))
         pygame.display.flip()
         clock.tick(60)
 
