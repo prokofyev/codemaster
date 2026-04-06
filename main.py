@@ -2,7 +2,7 @@ import pygame
 import sys
 from code_parser import parse_code
 from game import Game
-from engine import Engine
+from engine import Engine, EngineState
 from ui import UI
 from storage import load_code, save_code
 
@@ -31,10 +31,10 @@ def main():
             
             action = ui.handle_event(event)
             # Блокируем кнопки во время показа сообщения о новом уровне
-            if level_complete_start_time == 0 and action == "RUN":
-                if engine.is_done:
+            if action == "RUN":
+                # Если предыдущий запуск завершился полностью (без цели)
+                if engine.state == EngineState.COMPLETED:
                     game.reset_player()
-                    engine.is_done = False
                     ui.set_status("")
                     
                 save_code(ui.code_lines)
@@ -56,20 +56,20 @@ def main():
                 engine.is_running = False; engine.is_done = False
                 save_code(ui.code_lines)
 
-        if engine.is_running:
+        if engine.state == EngineState.RUNNING:
             engine.update()
             ui.set_exec_line(engine.get_executing_line_idx())
             
-            if not engine.is_running:
+            # Проверяем, почему остановился движок
+            if engine.state != EngineState.RUNNING:
                 ui.set_exec_line(-1)
-                if engine.is_done:
-                    ui.set_status("✅ Программа выполнена!")
-                else:
-                    # Запускаем таймер показа сообщения
+                if engine.state == EngineState.COMPLETED:
+                    ui.set_status("Программа выполнена!")
+                elif engine.state == EngineState.TARGET_REACHED:
                     if level_complete_start_time == 0:
                         level_complete_start_time = pygame.time.get_ticks()
 
-        # ⏱ Таймер: через 2 секунды скрываем сообщение и запускаем новый уровень
+        # Таймер: через 2 секунды скрываем сообщение и запускаем новый уровень
         if level_complete_start_time > 0:
             now = pygame.time.get_ticks()
             if now - level_complete_start_time >= 2000:

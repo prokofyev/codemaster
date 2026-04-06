@@ -5,7 +5,7 @@ pygame.font.init()
 FONT = pygame.font.SysFont(["menlo", "couriernew", "dejavusansmono", "arial"], 22)
 LARGE_FONT = pygame.font.SysFont(["menlo", "couriernew", "dejavusansmono", "arial"], 64, bold=True)
 if FONT.get_height() == 0:
-    raise RuntimeError("❌ Не удалось загрузить шрифт с поддержкой кириллицы.")
+    raise RuntimeError("Не удалось загрузить шрифт с поддержкой кириллицы.")
 
 CHAR_W, LINE_H = FONT.size("A")
 EDITOR_START_Y = 60
@@ -89,7 +89,7 @@ class UI:
     def draw(self, screen, game, show_level_msg=False):
         screen.fill((25, 25, 35))
         
-        score_surf = FONT.render(f"⭐ Очки: {game.score}", True, (255, 215, 0))
+        score_surf = FONT.render(f"Очки: {game.score}", True, (255, 215, 0))
         screen.blit(score_surf, (self.mid - score_surf.get_width() // 2, 10))
         
         for r in range(self.grid_size):
@@ -132,7 +132,6 @@ class UI:
                 color = (255, 100, 100) if self.error_msg else (100, 255, 150)
                 screen.blit(FONT.render(msg, True, color), (self.editor_x, self.h - 35))
 
-        # 🎉 Крупное сообщение по центру с затемнением
         if show_level_msg:
             overlay = pygame.Surface((self.w, self.h), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))
