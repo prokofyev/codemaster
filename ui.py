@@ -1,4 +1,5 @@
 import pygame
+from typing import Optional
 
 pygame.font.init()
 FONT = pygame.font.SysFont(["menlo", "couriernew", "dejavusansmono", "arial"], 22)
@@ -45,7 +46,7 @@ class UI:
         self.status_msg = msg
         if msg: self.error_msg = ""
 
-    def handle_event(self, event) -> str | None:
+    def handle_event(self, event) -> Optional[str]:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if self.run_btn.collidepoint(event.pos): return "RUN"
             if self.clear_btn.collidepoint(event.pos): return "CLEAR"

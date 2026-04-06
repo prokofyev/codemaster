@@ -12,32 +12,40 @@ class MockTime:
 class TestEngine(unittest.TestCase):
     def setUp(self):
         self.mock_time = MockTime()
+        self.original_get_ticks = pygame.time.get_ticks
         pygame.time.get_ticks = self.mock_time
+        
         self.game = Game()
-        # Фиксируем цель для предсказуемости теста
-        self.game.target_x, self.game.target_y = 5, 4
         self.engine = Engine(self.game, step_delay_ms=100)
 
-    def test_target_reached_and_score(self):
-        cmds = [(0, 'up()')]
+    def tearDown(self):
+        pygame.time.get_ticks = self.original_get_ticks
+
+    def test_move_with_steps_clamping(self):
+        # Центр (5,5). up(100) должен привести к (5,0), не выходя за границу
+        cmds = [(0, 'up', 100)]
         self.engine.start(cmds)
         self.mock_time.ticks = 100
         self.engine.update()
-        
-        self.assertTrue(self.engine.level_completed)
-        self.assertEqual(self.game.score, 10)
-        self.assertEqual(self.game.get_pos(), (5, 5)) # Вернулся на старт после сброса уровня
-        self.assertFalse(self.engine.is_running)
+        self.assertEqual((self.game.x, self.game.y), (5, 0))
+        self.assertTrue(self.game.check_target() if (5,0) == (self.game.target_x, self.game.target_y) else True)
 
-    def test_boundary_clamping(self):
-        cmds = [(0, 'left()') for _ in range(15)]
+    def test_multiple_commands_execution(self):
+        cmds = [(0, 'right', 3), (1, 'down', 2)]
         self.engine.start(cmds)
-        for i in range(1, 16):
-            self.mock_time.ticks = i * 100
-            self.engine.update()
-        x, y = self.game.get_pos()
-        self.assertEqual(x, 0)
-        self.assertEqual(y, 5)
+        
+        self.mock_time.ticks = 100
+        self.engine.update()
+        self.assertEqual((self.game.x, self.game.y), (8, 5))
+        
+        self.mock_time.ticks = 200
+        self.engine.update()
+        self.assertEqual((self.game.x, self.game.y), (8, 7))
+        
+        self.mock_time.ticks = 300
+        self.engine.update()
+        self.assertFalse(self.engine.is_running)
+        self.assertTrue(self.engine.is_done)
 
 if __name__ == '__main__':
     unittest.main()

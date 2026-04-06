@@ -29,6 +29,12 @@ def main():
             
             action = ui.handle_event(event)
             if action == "RUN":
+                # Если предыдущий запуск не привёл к цели, возвращаем игрока на старт
+                if engine.is_done:
+                    game.reset_player()
+                    engine.is_done = False
+                    ui.set_status("")
+                    
                 save_code(ui.code_lines)
                 commands, err_line, err_msg = parse_code(ui.get_code_text())
                 if commands is None:
@@ -53,14 +59,12 @@ def main():
             engine.update()
             ui.set_exec_line(engine.get_executing_line_idx())
             
-            if game.check_target() and engine.is_running == False: # Цель достигнута в этом кадре
-                ui.set_status("🎉 +10 очков! Новый уровень!")
+            if not engine.is_running:
                 ui.set_exec_line(-1)
-            elif engine.is_done:
-                ui.set_exec_line(-1)
-                if not ui.error_msg and not ui.status_msg:
+                if engine.is_done:
                     ui.set_status("✅ Программа выполнена!")
-                engine.is_done = False  # Сброс флага после отображения
+                else:
+                    ui.set_status("🎉 +10 очков! Новый уровень!")
 
         ui.draw(screen, game)
         pygame.display.flip()
